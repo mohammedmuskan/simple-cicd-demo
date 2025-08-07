@@ -1,14 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>My Single Page App</title>
-  <link rel="stylesheet" href="style.css">
+  <name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Weather Widget</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Welcome to My Web App!</h1>
-  <button onclick="showMessage()">Click Me</button>
-  <p id="message"></p>
+  <div class="app-container">
+    <h1>Weather Widget 🌤️</h1>
+    <input type="text" id="city-input" placeholder="Enter city name" />
+    <button onclick="getWeather()">Get Weather</button>
+
+    <div id="weather-result" class="hidden">
+      <h2 id="city-name"></h2>
+      <img id="weather-icon" src="" alt="Weather icon" />
+      <p id="description"></p>
+      <p id="temperature"></p>
+    </div>
+
+    <p id="error-message" class="error hidden"></p>
+  </div>
 
   <script src="script.js"></script>
 </body>

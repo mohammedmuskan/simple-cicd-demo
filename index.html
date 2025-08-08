@@ -1,132 +1,224 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Weather Widget</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mood Weather</title>
+  <style>
+    body {
+      margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: background-color 0.5s ease;
+      color: #222;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      min-height: 100vh;
+      background-color: #f0f0f0;
+    }
+    h1 {
+      margin-bottom: 0.5em;
+    }
+    input, button {
+      padding: 0.5em 1em;
+      font-size: 1em;
+      margin-right: 0.5em;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      cursor: pointer;
+      background-color: #0078d4;
+      color: white;
+      border: none;
+    }
+    button:hover {
+      background-color: #005a9e;
+    }
+    .weather-container {
+      margin-top: 2em;
+      text-align: center;
+      max-width: 400px;
+      background: white;
+      padding: 1.5em;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .palette {
+      margin-top: 1em;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .color-box {
+      width: 50px;
+      height: 50px;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.15);
+    }
+    .mood {
+      margin-top: 1em;
+      font-style: italic;
+      font-size: 1.1em;
+    }
+    .error {
+      color: red;
+      margin-top: 1em;
+    }
+  </style>
 </head>
 <body>
-  <div class="app-container">
-    <h1>Weather Widget 🌤️</h1>
-    <input type="text" id="city-input" placeholder="Enter city name" />
-    <button onclick="getWeather()">Get Weather</button>
-
-    <div id="weather-result" class="hidden">
-      <h2 id="city-name"></h2>
-      <img id="weather-icon" src="" alt="Weather icon" />
-      <p id="description"></p>
-      <p id="temperature"></p>
-    </div>
-
-    <p id="error-message" class="error hidden"></p>
+  <h1>Mood Weather 🌤️</h1>
+  <div>
+    <input type="text" id="cityInput" placeholder="Enter city name..." />
+    <button id="getWeatherBtn">Get Weather</button>
   </div>
+  <div class="weather-container" id="weatherContainer" style="display:none;">
+    <h2 id="cityName"></h2>
+    <p id="weatherDesc"></p>
+    <p><strong>Temperature:</strong> <span id="temperature"></span> °C</p>
+    <p><strong>Humidity:</strong> <span id="humidity"></span>%</p>
+    <p><strong>Wind Speed:</strong> <span id="windSpeed"></span> m/s</p>
+    <div class="palette" id="colorPalette"></div>
+    <div class="mood" id="moodDesc"></div>
+  </div>
+  <div class="error" id="errorMsg"></div>
 
-  <script src="script.js"></script>
-</body>
-</html>
-body, html {
-  margin: 0;
-  padding: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #e0f7fa;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+  <script>
+    const apiKey = 'YOUR_OPENWEATHERMAP_API_KEY'; // Replace with your API key
+    const getWeatherBtn = document.getElementById('getWeatherBtn');
+    const cityInput = document.getElementById('cityInput');
+    const weatherContainer = document.getElementById('weatherContainer');
+    const cityNameEl = document.getElementById('cityName');
+    const weatherDescEl = document.getElementById('weatherDesc');
+    const temperatureEl = document.getElementById('temperature');
+    const humidityEl = document.getElementById('humidity');
+    const windSpeedEl = document.getElementById('windSpeed');
+    const colorPaletteEl = document.getElementById('colorPalette');
+    const moodDescEl = document.getElementById('moodDesc');
+    const errorMsg = document.getElementById('errorMsg');
 
-.app-container {
-  background: white;
-  padding: 30px 40px;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  max-width: 400px;
-  width: 90%;
-  text-align: center;
-}
+    // Weather mood and color palettes mapping
+    const weatherMoods = {
+      Clear: {
+        mood: "Bright and cheerful — perfect for a sunny day!",
+        colors: ['#FFD54F', '#FFB300', '#FF6F00']
+      },
+      Clouds: {
+        mood: "Calm and introspective — a day for cozy thoughts.",
+        colors: ['#90A4AE', '#546E7A', '#37474F']
+      },
+      Rain: {
+        mood: "Peaceful and soothing — let the raindrops wash your worries away.",
+        colors: ['#4FC3F7', '#0288D1', '#01579B']
+      },
+      Drizzle: {
+        mood: "Light and refreshing — a gentle sprinkle to brighten your mood.",
+        colors: ['#81D4FA', '#4FC3F7', '#29B6F6']
+      },
+      Thunderstorm: {
+        mood: "Electric and powerful — a day full of energy and drama.",
+        colors: ['#616161', '#212121', '#424242']
+      },
+      Snow: {
+        mood: "Quiet and pure — a crisp day filled with calm and clarity.",
+        colors: ['#ECEFF1', '#B0BEC5', '#90A4AE']
+      },
+      Mist: {
+        mood: "Mysterious and tranquil — embrace the gentle haze.",
+        colors: ['#CFD8DC', '#B0BEC5', '#78909C']
+      },
+      Smoke: {
+        mood: "Muted and subdued — a day to slow down and reflect.",
+        colors: ['#757575', '#424242', '#212121']
+      },
+      Haze: {
+        mood: "Soft and mellow — a quiet day wrapped in warmth.",
+        colors: ['#BDBDBD', '#9E9E9E', '#757575']
+      },
+      Dust: {
+        mood: "Earthy and grounded — reconnect with nature.",
+        colors: ['#D7CCC8', '#A1887F', '#6D4C41']
+      },
+      Fog: {
+        mood: "Quiet and enveloping — a perfect day for introspection.",
+        colors: ['#B0BEC5', '#90A4AE', '#78909C']
+      },
+      Sand: {
+        mood: "Warm and calm — a gentle, grounding presence.",
+        colors: ['#D7CCC8', '#A1887F', '#6D4C41']
+      },
+      Ash: {
+        mood: "Cool and somber — a day to pause and breathe.",
+        colors: ['#B0BEC5', '#78909C', '#455A64']
+      },
+      Squall: {
+        mood: "Intense and fleeting — hold on through the storm.",
+        colors: ['#37474F', '#263238', '#000A12']
+      },
+      Tornado: {
+        mood: "Wild and unpredictable — stay safe and stay strong.",
+        colors: ['#212121', '#000000', '#4A148C']
+      }
+    };
 
-h1 {
-  margin-bottom: 20px;
-  color: #00796b;
-}
-
-input[type="text"] {
-  padding: 12px 15px;
-  width: calc(100% - 30px);
-  font-size: 1rem;
-  border: 2px solid #00796b;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-button {
-  padding: 12px 25px;
-  background-color: #00796b;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  width: 100%;
-  max-width: 250px;
-  transition: background-color 0.3s ease;
-}
-
-button:hover {
-  background-color: #004d40;
-}
-
-#weather-result img {
-  width: 100px;
-  margin-bottom: 15px;
-}
-
-.error {
-  color: red;
-  margin-top: 15px;
-}
-
-.hidden {
-  display: none;
-}
-
-const apiKey = "YOUR_OPENWEATHERMAP_API_KEY"; // <-- Replace with your API key
-
-async function getWeather() {
-  const city = document.getElementById("city-input").value.trim();
-  const errorMessage = document.getElementById("error-message");
-  const weatherResult = document.getElementById("weather-result");
-
-  if (!city) {
-    errorMessage.textContent = "Please enter a city name.";
-    errorMessage.classList.remove("hidden");
-    weatherResult.classList.add("hidden");
-    return;
-  }
-
-  errorMessage.classList.add("hidden");
-
-  try {
-    const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`
-    );
-
-    if (!response.ok) {
-      throw new Error("City not found");
+    function kelvinToCelsius(k) {
+      return (k - 273.15).toFixed(1);
     }
 
-    const data = await response.json();
+    async function getWeather(city) {
+      errorMsg.textContent = '';
+      weatherContainer.style.display = 'none';
 
-    document.getElementById("city-name").textContent = `${data.name}, ${data.sys.country}`;
-    document.getElementById("description").textContent = data.weather[0].description;
-    document.getElementById("temperature").textContent = `Temperature: ${data.main.temp} °C`;
-    document.getElementById("weather-icon").src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
-    document.getElementById("weather-icon").alt = data.weather[0].description;
+      try {
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}`
+        );
+        if (!response.ok) throw new Error('City not found');
+        const data = await response.json();
 
-    weatherResult.classList.remove("hidden");
-  } catch (error) {
-    errorMessage.textContent = error.message;
-    errorMessage.classList.remove("hidden");
-    weatherResult.classList.add("hidden");
-  }
-}
+        const mainWeather = data.weather[0].main;
+        const moodData = weatherMoods[mainWeather] || {
+          mood: "Weather is unique today!",
+          colors: ['#90A4AE', '#B0BEC5', '#CFD8DC']
+        };
+
+        cityNameEl.textContent = `${data.name}, ${data.sys.country}`;
+        weatherDescEl.textContent = data.weather[0].description;
+        temperatureEl.textContent = kelvinToCelsius(data.main.temp);
+        humidityEl.textContent = data.main.humidity;
+        windSpeedEl.textContent = data.wind.speed;
+
+        // Build color palette
+        colorPaletteEl.innerHTML = '';
+        moodData.colors.forEach(color => {
+          const div = document.createElement('div');
+          div.className = 'color-box';
+          div.style.backgroundColor = color;
+          colorPaletteEl.appendChild(div);
+        });
+
+        moodDescEl.textContent = moodData.mood;
+
+        // Change background color to the first color in palette for vibe
+        document.body.style.backgroundColor = moodData.colors[0];
+
+        weatherContainer.style.display = 'block';
+      } catch (error) {
+        errorMsg.textContent = error.message;
+      }
+    }
+
+    getWeatherBtn.addEventListener('click', () => {
+      const city = cityInput.value.trim();
+      if (city) getWeather(city);
+    });
+
+    cityInput.addEventListener('keyup', (event) => {
+      if (event.key === 'Enter') {
+        getWeatherBtn.click();
+      }
+    });
+  </script>
+</body>
+</html>

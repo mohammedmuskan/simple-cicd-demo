@@ -1,4 +1,4 @@
-const apiKey = "YOUR_OPENWEATHERMAP_API_KEY"; // <-- Replace with your API key
+const apiKey = 0a4e9d83934de2df9b4b639e951ca7f9; // <-- Replace with your API key
 
 async function getWeather() {
   const city = document.getElementById("city-input").value.trim();
@@ -38,3 +38,4 @@ async function getWeather() {
     weatherResult.classList.add("hidden");
   }
 }
+
